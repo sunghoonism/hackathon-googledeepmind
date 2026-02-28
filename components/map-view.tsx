@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { GoogleMap, useLoadScript, MarkerF } from "@react-google-maps/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Map as MapIcon } from "lucide-react";
@@ -22,13 +22,37 @@ export default function MapView({ spots, languageCode }: MapViewProps) {
         language: languageCode || "ko",
     });
 
+    const [map, setMap] = useState<google.maps.Map | null>(null);
+
     const center = useMemo(() => {
         if (spots.length === 0) return { lat: 37.5665, lng: 126.9780 }; // Default: Seoul
 
-        // Calculate bounds or simple average center
+        // Initial center calculation just for hydration (will be overridden by bounds)
         const avgLat = spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length;
         const avgLng = spots.reduce((sum, spot) => sum + spot.lng, 0) / spots.length;
         return { lat: avgLat, lng: avgLng };
+    }, [spots]);
+
+    const onLoad = useCallback((map: google.maps.Map) => {
+        setMap(map);
+        if (spots.length === 0) return;
+
+        const bounds = new window.google.maps.LatLngBounds();
+        spots.forEach((spot) => {
+            bounds.extend({ lat: spot.lat, lng: spot.lng });
+        });
+
+        // Fit bounds directly
+        map.fitBounds(bounds);
+
+        // If there's only one marker, zooming might be too close, pull back a bit
+        if (spots.length === 1) {
+            // Needed to run after fitBounds finishes
+            const listener = window.google.maps.event.addListener(map, "idle", () => {
+                map.setZoom(14);
+                window.google.maps.event.removeListener(listener);
+            });
+        }
     }, [spots]);
 
     if (loadError) {
@@ -49,8 +73,9 @@ export default function MapView({ spots, languageCode }: MapViewProps) {
         <div className="relative w-full h-full flex-1">
             <GoogleMap
                 mapContainerStyle={mapContainerStyle}
-                zoom={10}
-                center={center}
+                zoom={10} // Initial fallback zoom
+                center={center} // Initial fallback center
+                onLoad={onLoad}
                 options={{
                     disableDefaultUI: false,
                     zoomControl: true,

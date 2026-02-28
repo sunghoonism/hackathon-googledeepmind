@@ -1,74 +1,52 @@
-# K-Pilgrimage Assistant (K-드라마 성지순례 도우미)
-> Gemini 해커톤 서울 2026 출품작 - 구글 딥마인드 주최
+# 🎬 K-Pilgrimage Assistant (K-드라마 성지순례 도우미)
 
-## 📌 프로젝트 개요 (Overview)
-K-드라마 팬들을 위해 좋아하는 드라마 제목만 입력하면, **AI가 추천하는 주요 촬영지 및 1일 당일치기 투어 동선(Itinerary)을 자동으로 생성**해주는 서비스입니다.
-해커톤의 "Speed Over Perfection" 및 "Mock Data First" 규칙을 준수하여 5시간 내에 빠르고 직관적으로 완성된 최소 기능 제품(MVP)입니다.
+> **Gemini 해커톤 2026 제출작 - 구글 딥마인드 주최**  
 
-### 🎯 핵심 목표
-- **간단하고 예쁜 UI/UX**: 복잡한 회원가입이나 옵션 선택 없이 검색 한 번으로 결과를 제공.
-- **빠른 시각적 피드백**: Skeleton UI, Toast 알림 등.
-- **안전한 Error Fallback**: API 장애가 발생해도 앱이 죽지 않고 미리 준비된 "Mock Data (눈물의 여왕)"를 대신 보여주어 사용자 경험 유지.
 
----
+<br/>
 
-## 🛠 사용된 기술 스택 (Tech Stack)
+## 📌 1. 프로젝트 개요 (Overview)
+
+**K-Pilgrimage Assistant**는 K-드라마 팬들을 위해 좋아하는 드라마 제목만 입력하면, **Gemini AI가 추천하는 주요 촬영지 및 1일 당일치기 투어 동선(Itinerary)을 자동으로 생성**해주는 지능형 큐레이션 서비스입니다.
+
+복잡한 회원가입이나 여행 계획 수립 과정 없이, 검색 한 번으로 가장 직관적이고 시각적인 여행 루트를 제공하는 데 초점을 맞추었습니다.
+
+<br/>
+
+## ✨ 2. 주요 기능 및 특장점 (Key Features)
+
+### 🌍 자동 다국어 번역 지원 (Zero-config i18n)
+- **프론트엔드 Regex 감지**: 사용자가 검색어를 입력하는 즉시 언어를 빠르게 감지하여 **로딩 화면부터 해당 언어로 렌더링**됩니다.
+- **백엔드 프롬프트 번역**: Gemini가 응답을 생성할 때, 모든 장소 데이터와 UI 텍스트(공유 버튼, 길찾기 버튼 등)를 감지된 언어로 직접 번역하여 JSON으로 내려줍니다. Gemini 모델이 언어를 파악하므로, Gemini가 가능한 모든 언어를 지원합니다.
+
+### 🤖 AI 기반 다이내믹 동선 생성
+- **Gemini 2.5 Flash** 모델을 활용하여, 드라마 제목만으로도 실제 존재하는 주요 촬영지(3~5곳)를 찾아냅니다.
+- 거리와 이동 시간을 고려한 최적의 당일치기 스케줄(타임라인)과 각 장소에 대한 매력적인 설명을 반환합니다.
+
+### 🗺️ 스마트 구글맵 알고리즘 적용
+- 단순한 지도 표출을 넘어, AI가 반환한 모든 마커(Spot)들의 좌표(위도/경도)를 프론트엔드에서 계산합니다.
+- `Google Maps LatLngBounds`를 활용하여 **모든 장소가 한 화면에 딱 맞게 들어오도록 자동 줌 인/아웃(fitBounds) 기능**을 구현해 사용자 피로도를 줄였습니다.
+
+### 🎨 드라마 맞춤형 테마 컬러 UI
+- AI가 해당 드라마의 분위기에 맞는 포인트 컬러(Hex 코드)를 내려주면, 검색 버튼, 로딩 스피너, 지도 아이콘, 공유 버튼 등의 테마가 동적으로 변경되어 시각적인 즐거움을 줍니다.
+
+<br/>
+
+## 🏆 3. 해커톤 룰 완벽 준수 (Hackathon Compliance)
+
+본 프로젝트는 주어진 6시간 내에 작동하는 MVP를 만들기 위한 **"Speed Over Perfection"** 원칙을 엄격히 따랐습니다.
+
+1. **DB 및 인증(Auth) 배제**: 복잡한 아키텍처를 과감히 생략하고오로지 프론트엔드 상태 관리(React State)와 AI 프롬프트 엔지니어링에 집중했습니다.
+2. **완벽한 Error Fallback (앱 크래시 방지)**: 
+   - 일시적인 API 트래픽 초과나 크레딧 고갈로 오류가 발생하더라도 앱이 죽지 않습니다!
+   - 즉시 사전에 준비된 Mock Data("눈물의 여왕" 예시)로 부드럽게 Fallback하여 UI가 항상 정상 작동함을 보장합니다.
+3. **사용자 경험(UX) 극대화**: API를 호출하는 지루한 시간 동안 부드러운 순차적 로딩 텍스트 애니메이션을 배치하여 체감 대기시간을 줄였습니다.
+
+<br/>
+
+## 🛠 4. 기술 스택 (Tech Stack)
+
 - **프레임워크**: Next.js (App Router), React, TypeScript
-- **스타일링**: Tailwind CSS
-- **UI 라이브러리**: shadcn/ui (Button, Input, Card, Skeleton, Toast 등), Lucide-React
-- **지도 연동**: `@react-google-maps/api` (Google Maps API)
-- **AI 연동**: `@google/genai` (Gemini 2.5 Flash API - JSON Schema Response)
-
----
-
-## 🚀 빠른 시작 (Getting Started)
-
-### 1. 환경 변수 설정
-프로젝트 루트 경로에 `.env.local` 파일을 생성하고 다음 API 키를 설정합니다.
-(API 키들은 구글 디벨로퍼 콘솔, 구글 AI Studio에서 발급받을 수 있습니다.)
-
-```env
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-```
-
-### 2. 패키지 설치
-```bash
-npm install
-```
-
-### 3. 개발 서버 실행
-```bash
-npm run dev
-```
-
-### 4. 사용 방법
-1. 브라우저에서 `http://localhost:3000` 접속.
-2. 메인 화면 중앙의 검색창에 좋아하는 K-드라마 제목(예: "도깨비", "사랑의 불시착") 입력 후 검색.
-3. 로딩(탐색 중)이 끝나면 좌측엔 Google Maps 위에 마커가, 우측엔 추천 동선 스케줄이 타임라인 뷰로 렌더링됩니다.
-
----
-
-## 📂 프로젝트 핵심 구조
-```text
-📦hackathon-googledeepmind
- ┣ 📂app
- ┃ ┣ 📂api               # Next.js API Routes 백엔드 서버
- ┃ ┃ ┗ 📂generate-route  # Gemini 연동 및 JSON Schema 생성 로직
- ┃ ┣ 📜layout.tsx        # 글로벌 레이아웃 (Toaster Provider)
- ┃ ┗ 📜page.tsx          # 메인 페이지 (검색 Hero + Dashboard 통합)
- ┣ 📂components          
- ┃ ┣ 📂ui              # shadcn/ui 기반 컴포넌트 코드 모음
- ┃ ┗ 📜map-view.tsx      # Google Maps API를 사용해 다중 마커 및 중앙 계산을 처리하는 지도 뷰
- ┣ 📂lib
- ┃ ┣ 📜mock-data.ts      # (해커톤 룰 고려) API 장애 혹은 Fallback 시 출력할 하드코딩 예비 데이터
- ┃ ┗ 📜utils.ts          # 스타일 관리를 위한 tailwind-merge 유틸리티
- ┣ 📜tailwind.config.ts
- ┗ 📜...
-```
-
----
-
-## 🔒 Error Handling 전략 (해커톤 특화)
-- **AI 응답 크래시 방지**: `try-catch` 블록으로 `/api/generate-route`를 감싸 API Key 누락이나 Gemini의 응답 파싱 에러(JSON 형태가 아닐 때 등) 발생 시 무조건 HTTP 500 내장 에러가 아닌 정상 `200 OK`와 함께 `mock-data.ts`의 값으로 안전하게 회피(Fallback) 하도록 설계되었습니다.
-- **사용자 안내**: 오류 상황에서도 프론트엔드가 이를 감지하여 사용자에게는 "API 에러 - 기본 예제 데이터로 대체합니다"와 같은 부드러운 토스트 알림을 띄웁니다.
+- **스타일링 & UI**: Tailwind CSS, shadcn/ui (빠른 컴포넌트 조립), Lucide-React
+- **지도 연동**: `@react-google-maps/api` (Google Maps API 연동)
+- **AI 연동**: `@google/genai` (구조화된 JSON Schema 강제 응답 활용)

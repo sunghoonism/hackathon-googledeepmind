@@ -23,17 +23,84 @@ export default function Home() {
     const [query, setQuery] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStep, setLoadingStep] = useState(0);
+    const [loadingLang, setLoadingLang] = useState<"ko" | "en" | "ja" | "zh" | "vi" | "fr" | "es" | "th">("ko");
     const [routeData, setRouteData] = useState<RouteResponse | null>(null);
     const resultRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
 
-    const LOADING_STEPS = [
-        "드라마 정보를 분석하고 있습니다...",
-        "주요 촬영지를 탐색하는 중...",
-        "최적의 당일치기 동선을 계산하고 있습니다...",
-        "여행 스케줄을 예쁘게 정리하는 중...",
-        "거의 다 완료되었습니다! 🚀"
-    ];
+    // Multilingual loading texts
+    const LOADING_TEXTS = {
+        ko: [
+            "드라마 정보를 분석하고 있습니다...",
+            "주요 촬영지를 탐색하는 중...",
+            "최적의 당일치기 동선을 계산하고 있습니다...",
+            "여행 스케줄을 정리하는 중...",
+            "거의 다 완료되었습니다! 🚀"
+        ],
+        en: [
+            "Analyzing drama information...",
+            "Exploring major filming locations...",
+            "Calculating the optimal day trip route...",
+            "Organizing the travel itinerary...",
+            "Almost done! 🚀"
+        ],
+        ja: [
+            "ドラマの情報を分析しています...",
+            "主要なロケ地を探索中...",
+            "最適な日帰りルートを計算しています...",
+            "旅行のスケジュールを整理中...",
+            "もうすぐ完了します！ 🚀"
+        ],
+        zh: [
+            "正在分析韩剧信息...",
+            "正在探索主要拍摄地...",
+            "正在计算最佳一日游路线...",
+            "正在整理旅行日程...",
+            "马上就好！ 🚀"
+        ],
+        vi: [
+            "Đang phân tích thông tin phim...",
+            "Đang khám phá các địa điểm quay phim...",
+            "Đang tính toán tuyến đường tốt nhất...",
+            "Đang sắp xếp lịch trình...",
+            "Sắp hoàn thành! 🚀"
+        ],
+        fr: [
+            "Analyse des informations sur le drama...",
+            "Exploration des lieux de tournage...",
+            "Calcul du meilleur itinéraire...",
+            "Organisation du programme...",
+            "Presque terminé ! 🚀"
+        ],
+        es: [
+            "Analizando la información del drama...",
+            "Explorando los lugares de grabación...",
+            "Calculando la mejor ruta...",
+            "Organizando el itinerario...",
+            "¡Casi listo! 🚀"
+        ],
+        th: [
+            "กำลังวิเคราะห์ข้อมูลละคร...",
+            "กำลังสำรวจสถานที่ถ่ายทำ...",
+            "กำลังคำนวณเส้นทางที่ดีที่สุด...",
+            "กำลังจัดเตรียมตารางการเดินทาง...",
+            "เกือบเสร็จแล้ว! 🚀"
+        ]
+    };
+
+    // Quick regex-based language detection
+    const detectLanguageFallback = (text: string): "ko" | "en" | "ja" | "zh" | "vi" | "fr" | "es" | "th" => {
+        if (/[가-힣]/.test(text)) return "ko";
+        if (/[\u3040-\u30ff]/.test(text)) return "ja"; // Hiragana/Katakana
+        if (/[\u4e00-\u9fa5]/.test(text)) return "zh"; // CJK Unified Ideographs (Kanji/Hanzi)
+        if (/[\u0E00-\u0E7F]/.test(text)) return "th"; // Thai
+        // Vietnamese has very specific diacritics
+        if (/[àáảãạăằắẳẵặâầấẩẫậđèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i.test(text)) return "vi";
+        // French-specific or Spanish-specific chars check
+        if (/[ñ¿¡]/i.test(text) || (/[áéíóú]/i.test(text) && !/[àâçèêëîïôœùû]/i.test(text))) return "es";
+        if (/[àâæçéèêëîïôœùûüÿ]/i.test(text)) return "fr";
+        return "en"; // Default fallback
+    };
 
     // Cycle through loading steps
     useEffect(() => {
@@ -48,11 +115,11 @@ export default function Home() {
         }, 100);
 
         const interval = setInterval(() => {
-            setLoadingStep((prev) => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
-        }, 2000); // Change step every 2 seconds
+            setLoadingStep((prev) => (prev < LOADING_TEXTS[loadingLang].length - 1 ? prev + 1 : prev));
+        }, 3000); // Change step every 2 seconds
 
         return () => clearInterval(interval);
-    }, [isLoading, LOADING_STEPS.length]);
+    }, [isLoading, loadingLang]);
 
     // Auto scroll when results arrive
     useEffect(() => {
@@ -106,13 +173,15 @@ export default function Home() {
 
         if (!searchQuery.trim()) {
             toast({
-                title: "Insert Title of Drama",
+                title: "Insert the title of K-Drama",
                 description: "Example: Queen of Tears, Goblin",
                 variant: "destructive",
             });
             return;
         }
 
+        const detectedLang = detectLanguageFallback(searchQuery);
+        setLoadingLang(detectedLang);
         setIsLoading(true);
         setRouteData(null); // Clear previous results
 
@@ -216,15 +285,22 @@ export default function Home() {
                             <Loader2 className="w-12 h-12 text-primary animate-spin" style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} />
                         </div>
                         <h3 className="text-2xl font-bold mb-3 text-center transition-all duration-300 ease-in-out">
-                            {LOADING_STEPS[loadingStep]}
+                            {LOADING_TEXTS[loadingLang][loadingStep]}
                         </h3>
                         <p className="text-muted-foreground text-center max-w-md">
-                            AI가 수많은 데이터를 분석하여 최고의 여행 코스를 만들고 있습니다. 잠시만 기다려주세요!
+                            {loadingLang === "ko" && "AI가 수많은 데이터를 분석하여 최고의 여행 코스를 만들고 있습니다. 잠시만 기다려주세요!"}
+                            {loadingLang === "en" && "AI is analyzing vast amounts of data to create the best travel route. Please wait a moment!"}
+                            {loadingLang === "ja" && "AIが膨大なデータを分析し、最高の旅行ルートを作成しています。少々お待ちください！"}
+                            {loadingLang === "zh" && "AI正在分析海量数据，为您打造最佳旅行路线。请稍候！"}
+                            {loadingLang === "vi" && "AI đang phân tích lượng dữ liệu để tạo ra tuyến đường tốt nhất. Vui lòng đợi!"}
+                            {loadingLang === "fr" && "L'IA analyse les données pour créer le meilleur itinéraire. Veuillez patienter !"}
+                            {loadingLang === "es" && "La IA está analizando los datos para crear la mejor ruta. ¡Espera un momento!"}
+                            {loadingLang === "th" && "AI กำลังวิเคราะห์ข้อมูลเพื่อสร้างเส้นทางที่ดีที่สุด โปรดรอสักครู่!"}
                         </p>
 
                         {/* Stepper Dots */}
                         <div className="flex gap-2 mt-8">
-                            {LOADING_STEPS.map((_, idx) => (
+                            {LOADING_TEXTS[loadingLang].map((_, idx) => (
                                 <div
                                     key={idx}
                                     className={`h-2 rounded-full transition-all duration-500 ${idx === loadingStep ? 'w-8 bg-primary' : idx < loadingStep ? 'w-2 bg-primary/50' : 'w-2 bg-slate-200'}`}
