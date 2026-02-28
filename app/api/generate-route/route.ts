@@ -18,9 +18,10 @@ const responseSchema = {
                     name: { type: "string", description: "촬영지 장소명" },
                     lat: { type: "number", description: "장소의 위도 (Latitude)" },
                     lng: { type: "number", description: "장소의 경도 (Longitude)" },
-                    description: { type: "string", description: "해당 드라마에서 어떻게 나왔는지, 어떤 장소인지에 대한 간략한 설명" }
+                    description: { type: "string", description: "해당 드라마에서 어떻게 나왔는지, 어떤 장소인지에 대한 간략한 설명" },
+                    imageSearchKeyword: { type: "string", description: "Google Places API에서 이 장소의 사진을 효과적으로 검색할 수 있는 키워드 (예: 장소명 + 드라마 제목 결합)" }
                 },
-                required: ["name", "lat", "lng", "description"]
+                required: ["name", "lat", "lng", "description", "imageSearchKeyword"]
             },
             description: "주요 촬영지 3~5곳의 목록"
         },
@@ -48,9 +49,13 @@ const responseSchema = {
             },
             required: ["mapTitle", "spotCount", "timelineTitle", "timelineSubtitle", "successTitle", "successDescription"],
             description: "UI 화면에 표시될 텍스트들의 다국어 번역본 데이터"
+        },
+        themeColor: {
+            type: "string",
+            description: "드라마의 전반적인 분위기와 어울리는 메인 포인트 컬러 (Hex 코드, 예: '#db2777')"
         }
     },
-    required: ["drama", "spots", "itinerary", "uiTranslations"]
+    required: ["drama", "spots", "itinerary", "uiTranslations", "themeColor"]
 };
 
 export async function POST(req: NextRequest) {
@@ -93,6 +98,29 @@ export async function POST(req: NextRequest) {
 
         if (response.text) {
             const jsonResponse = JSON.parse(response.text);
+
+            // Google Places API를 통해 사진 동적 가져오기
+            const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+            if (mapsApiKey) {
+                await Promise.all(jsonResponse.spots.map(async (spot: any) => {
+                    try {
+                        const searchBox = spot.imageSearchKeyword || (spot.name + ' ' + jsonResponse.drama);
+                        const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchBox)}&key=${mapsApiKey}`;
+                        const placeRes = await fetch(searchUrl);
+                        const placeData = await placeRes.json();
+
+                        if (placeData.results && placeData.results.length > 0) {
+                            const photos = placeData.results[0].photos;
+                            if (photos && photos.length > 0) {
+                                spot.imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photos[0].photo_reference}&key=${mapsApiKey}`;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Place photo fetch error for", spot.name, e);
+                    }
+                }));
+            }
+
             return NextResponse.json(jsonResponse);
         } else {
             throw new Error("No text response from Gemini API");

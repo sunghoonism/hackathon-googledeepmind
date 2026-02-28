@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, MapPin, Map as MapIcon, Clock } from "lucide-react";
+import { useEffect } from "react";
+import { Search, MapPin, Map as MapIcon, Clock, Image as ImageIcon, Share2, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,6 +25,42 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(false);
     const [routeData, setRouteData] = useState<RouteResponse | null>(null);
     const { toast } = useToast();
+
+    // Check URL parameters for shared data
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const sharedData = params.get('data');
+        if (sharedData) {
+            try {
+                const decodedStr = decodeURIComponent(atob(sharedData));
+                const parsedData = JSON.parse(decodedStr);
+                setRouteData(parsedData);
+            } catch (error) {
+                console.error("Failed to parse shared data", error);
+            }
+        }
+    }, []);
+
+    const handleShare = () => {
+        if (!routeData) return;
+        try {
+            const jsonStr = JSON.stringify(routeData);
+            const encodedData = btoa(encodeURIComponent(jsonStr));
+            const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast({
+                title: "링크 복사 완료!",
+                description: "코스 링크가 클립보드에 복사되었습니다. 친구에게 공유해보세요!",
+            });
+        } catch (error) {
+            console.error("Failed to generate share link", error);
+            toast({
+                title: "공유 실패",
+                description: "링크 생성 중 오류가 발생했습니다.",
+                variant: "destructive"
+            });
+        }
+    };
 
     const handleSearch = async (e?: React.FormEvent, directQuery?: string) => {
         if (e) e.preventDefault();
@@ -70,12 +107,18 @@ export default function Home() {
         }
     };
 
+    // Apply dynamic theme color if available
+    const themeStyle = routeData?.themeColor ? { '--primary-color': routeData.themeColor } as React.CSSProperties : {};
+
     return (
-        <div className="flex flex-col gap-8 w-full">
+        <div className="flex flex-col gap-8 w-full" style={themeStyle}>
             {/* Hero Search Section */}
             <section className="flex flex-col items-center justify-center space-y-6 py-12 md:py-24 text-center">
                 <div className="space-y-4">
-                    <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+                    <h1
+                        className="text-4xl md:text-6xl font-extrabold tracking-tighter bg-clip-text text-transparent transition-colors duration-500"
+                        style={{ backgroundImage: routeData?.themeColor ? `linear-gradient(to right, ${routeData.themeColor}, #f472b6)` : 'linear-gradient(to right, #9333ea, #ec4899)' }}
+                    >
                         K-Pilgrimage Assistant
                     </h1>
                 </div>
@@ -113,7 +156,13 @@ export default function Home() {
                             onChange={(e) => setQuery(e.target.value)}
                         />
                     </div>
-                    <Button type="submit" size="lg" className="h-14 px-8 rounded-xl font-bold text-lg w-full sm:w-auto shadow-md" disabled={isLoading}>
+                    <Button
+                        type="submit"
+                        size="lg"
+                        className="h-14 px-8 rounded-xl font-bold text-lg w-full sm:w-auto shadow-md text-white transition-colors duration-500"
+                        disabled={isLoading}
+                        style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
+                    >
                         {isLoading ? "Searching..." : "Generate Route"}
                     </Button>
                 </form>
@@ -152,22 +201,32 @@ export default function Home() {
 
             {/* Result Dashboard */}
             {routeData && !isLoading && (
-                <div className="grid md:grid-cols-5 gap-6 animate-in slide-in-from-bottom-8 duration-700">
+                <div className="flex flex-col gap-8 w-full max-w-5xl animate-in slide-in-from-bottom-8 duration-700 px-4">
 
                     {/* Map View */}
-                    <Card className="md:col-span-3 h-[500px] md:h-[700px] shadow-xl border-0 overflow-hidden flex flex-col relative">
+                    <Card className="w-full h-[400px] md:h-[600px] shadow-xl border-0 overflow-hidden flex flex-col relative transition-shadow duration-500 hover:shadow-2xl">
                         <div className="absolute top-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border pointer-events-none">
-                            <h3 className="font-bold flex items-center gap-2"><MapIcon size={18} className="text-primary" /> {routeData.uiTranslations?.mapTitle || "촬영지 지도"}</h3>
+                            <h3 className="font-bold flex items-center gap-2"><MapIcon size={18} style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} /> {routeData.uiTranslations?.mapTitle || "촬영지 지도"}</h3>
                             <p className="text-sm text-muted-foreground">{routeData.spots.length} {routeData.uiTranslations?.spotCount || "개의 스팟"}</p>
+                        </div>
+                        <div className="absolute top-4 right-4 z-10">
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="shadow-md bg-white hover:bg-slate-100 text-slate-700 font-semibold flex gap-2"
+                                onClick={handleShare}
+                            >
+                                <Share2 size={16} /> 코스 공유하기
+                            </Button>
                         </div>
                         <MapView spots={routeData.spots} />
                     </Card>
 
                     {/* Timeline View */}
-                    <Card className="md:col-span-2 shadow-xl border-0 flex flex-col h-[500px] md:h-[700px]">
-                        <CardHeader className="bg-primary/5 border-b pb-6">
+                    <Card className="w-full shadow-xl border-0 flex flex-col mb-8 transition-shadow duration-500 hover:shadow-2xl">
+                        <CardHeader className="border-b pb-6" style={{ backgroundColor: routeData?.themeColor ? `${routeData.themeColor}15` : 'hsl(var(--primary)/0.05)' }}>
                             <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                                <Clock className="text-primary" /> {routeData.uiTranslations?.timelineTitle || "추천 동선"}
+                                <Clock style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} /> {routeData.uiTranslations?.timelineTitle || "추천 동선"}
                             </CardTitle>
                             <CardDescription className="text-base text-slate-600">
                                 <span className="font-semibold text-primary">{routeData.drama}</span> {routeData.uiTranslations?.timelineSubtitle || "당일치기 투어 스케줄"}
@@ -183,19 +242,51 @@ export default function Home() {
                                     return (
                                         <div key={index} className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                                             {/* Timeline Icon */}
-                                            <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-slate-200 group-[.is-active]:bg-primary group-[.is-active]:text-primary-foreground text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 transition-colors">
+                                            <div
+                                                className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-slate-200 group-[.is-active]:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 transition-colors duration-500"
+                                                style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
+                                            >
                                                 <span className="text-xs font-bold">{index + 1}</span>
                                             </div>
 
                                             {/* Timeline Content */}
                                             <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] pl-4 md:pl-0 md:group-odd:pr-6 md:group-even:pl-6 pb-2">
                                                 <div className="flex flex-col mb-1 group-[.is-active]:text-foreground">
-                                                    <time className="text-sm font-semibold text-primary/80 mb-1">{item.time}</time>
+                                                    <time
+                                                        className="text-sm font-semibold mb-1"
+                                                        style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }}
+                                                    >
+                                                        {item.time}
+                                                    </time>
                                                     <h4 className="font-bold text-lg leading-tight mb-2">{item.spotName}</h4>
                                                     {spotDetails && (
-                                                        <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-none bg-muted/50 p-3 rounded-lg border border-border/50">
-                                                            {spotDetails.description}
-                                                        </p>
+                                                        <div className="flex flex-col gap-3">
+                                                            <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-none bg-muted/50 p-3 rounded-lg border border-border/50">
+                                                                {spotDetails.description}
+                                                            </p>
+                                                            {spotDetails.imageUrl ? (
+                                                                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm relative group/img">
+                                                                    <img src={spotDetails.imageUrl} alt={item.spotName} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm bg-slate-100 flex flex-col items-center justify-center text-muted-foreground/50 border border-slate-200">
+                                                                    <ImageIcon className="h-10 w-10 mb-2" />
+                                                                    <span className="text-xs">No image available</span>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex justify-end mt-2">
+                                                                <a
+                                                                    href={`https://map.kakao.com/link/to/${spotDetails.name.split(' (')[0]},${spotDetails.lat},${spotDetails.lng}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 rounded-md px-4 gap-2 text-white shadow"
+                                                                    style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
+                                                                >
+                                                                    <ExternalLink size={14} />
+                                                                    길찾기
+                                                                </a>
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
