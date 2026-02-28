@@ -1,0 +1,88 @@
+import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenAI } from "@google/genai";
+import { MOCK_ROUTE_DATA } from "@/lib/mock-data";
+
+// Type definition for expected output to help the AI structure its response
+const responseSchema = {
+    type: "object",
+    properties: {
+        drama: {
+            type: "string",
+            description: "입력된 드라마의 제목"
+        },
+        spots: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    name: { type: "string", description: "촬영지 장소명" },
+                    lat: { type: "number", description: "장소의 위도 (Latitude)" },
+                    lng: { type: "number", description: "장소의 경도 (Longitude)" },
+                    description: { type: "string", description: "해당 드라마에서 어떻게 나왔는지, 어떤 장소인지에 대한 간략한 설명" }
+                },
+                required: ["name", "lat", "lng", "description"]
+            },
+            description: "주요 촬영지 3~5곳의 목록"
+        },
+        itinerary: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    time: { type: "string", description: "방문 시간 (예: '10:00', '13:00')" },
+                    spotName: { type: "string", description: "방문할 촬영지 장소명 (spots에 있는 name과 일치해야 함)" }
+                },
+                required: ["time", "spotName"]
+            },
+            description: "당일치기 여행 동선 타임라인 (시간대별 방문 장소)"
+        }
+    },
+    required: ["drama", "spots", "itinerary"]
+};
+
+export async function POST(req: NextRequest) {
+    try {
+        const body = await req.json();
+        const { query } = body;
+
+        if (!query) {
+            return NextResponse.json({ error: "검색어가 필요합니다." }, { status: 400 });
+        }
+
+        if (!process.env.GEMINI_API_KEY) {
+            console.warn("GEMINI_API_KEY is not defined. Falling back to mock data.");
+            return NextResponse.json(MOCK_ROUTE_DATA);
+        }
+
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+        const prompt = `
+당신은 K-드라마 팬들을 위한 전문 여행 가이드입니다. 
+사용자가 입력한 드라마 제목을 기반으로 한국 내 주요 촬영지(3~5곳)를 찾아내고, 하루(당일치기) 동안 둘러보기 좋은 성지순례 동선을 계획해주세요.
+검색 성능과 안전성을 위해 존재하는 실제 장소들의 대략적인 위도(lat)와 경도(lng)를 반드시 포함해야 합니다.
+
+드라마 제목: "${query}"
+
+제공된 JSON Schema 형식에 맞추어 완벽한 JSON 형식으로만 응답하세요. 다른 부가적인 텍스트는 출력하지 마세요.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+            }
+        });
+
+        if (response.text) {
+            const jsonResponse = JSON.parse(response.text);
+            return NextResponse.json(jsonResponse);
+        } else {
+            throw new Error("No text response from Gemini API");
+        }
+    } catch (error) {
+        console.error("API Error:", error);
+        // 에러 발생 시 무조건 앱이 죽지 않게 Mock Data 반환 (Hackathon Rule)
+        return NextResponse.json(MOCK_ROUTE_DATA);
+    }
+}
