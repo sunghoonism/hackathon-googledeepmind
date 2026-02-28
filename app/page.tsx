@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
-import { Search, MapPin, Map as MapIcon, Clock, Image as ImageIcon, Share2, ExternalLink } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, MapPin, Map as MapIcon, Clock, Image as ImageIcon, Share2, ExternalLink, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,8 +22,46 @@ const RECOMMENDED_DRAMAS = [
 export default function Home() {
     const [query, setQuery] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingStep, setLoadingStep] = useState(0);
     const [routeData, setRouteData] = useState<RouteResponse | null>(null);
+    const resultRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
+
+    const LOADING_STEPS = [
+        "드라마 정보를 분석하고 있습니다...",
+        "주요 촬영지를 탐색하는 중...",
+        "최적의 당일치기 동선을 계산하고 있습니다...",
+        "여행 스케줄을 예쁘게 정리하는 중...",
+        "거의 다 완료되었습니다! 🚀"
+    ];
+
+    // Cycle through loading steps
+    useEffect(() => {
+        if (!isLoading) {
+            setLoadingStep(0);
+            return;
+        }
+
+        // Auto scroll to loading view when search starts
+        setTimeout(() => {
+            resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
+        const interval = setInterval(() => {
+            setLoadingStep((prev) => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
+        }, 2000); // Change step every 2 seconds
+
+        return () => clearInterval(interval);
+    }, [isLoading, LOADING_STEPS.length]);
+
+    // Auto scroll when results arrive
+    useEffect(() => {
+        if (routeData && !isLoading) {
+            setTimeout(() => {
+                resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }, [routeData, isLoading]);
 
     // Check URL parameters for shared data
     useEffect(() => {
@@ -170,138 +207,136 @@ export default function Home() {
                 </form>
             </section>
 
-            {/* Loading Skeleton */}
-            {isLoading && (
-                <div className="grid md:grid-cols-5 gap-6 animate-in fade-in duration-500">
-                    <Card className="md:col-span-3 h-[400px] md:h-[600px] shadow-lg rounded-xl border-0 ring-1 ring-border/50">
-                        <CardHeader>
-                            <Skeleton className="h-8 w-[200px]" />
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-full w-full min-h-[300px] md:min-h-[500px] rounded-lg" />
-                        </CardContent>
-                    </Card>
-                    <Card className="md:col-span-2 shadow-lg rounded-xl border-0 ring-1 ring-border/50">
-                        <CardHeader>
-                            <Skeleton className="h-8 w-[150px]" />
-                            <Skeleton className="h-4 w-[250px]" />
-                        </CardHeader>
-                        <CardContent className="space-y-6 mt-4">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex gap-4">
-                                    <Skeleton className="h-12 w-12 rounded-full shrink-0" />
-                                    <div className="space-y-2 w-full">
-                                        <Skeleton className="h-5 w-[80%]" />
-                                        <Skeleton className="h-4 w-full" />
-                                    </div>
-                                </div>
+            <div ref={resultRef} className="w-full flex flex-col items-center scroll-mt-6">
+                {/* Loading State */}
+                {isLoading && (
+                    <div className="w-full flex flex-col items-center justify-center py-20 px-4 animate-in fade-in duration-500">
+                        <div className="relative flex items-center justify-center w-24 h-24 mb-8">
+                            <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-pulse"></div>
+                            <Loader2 className="w-12 h-12 text-primary animate-spin" style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-3 text-center transition-all duration-300 ease-in-out">
+                            {LOADING_STEPS[loadingStep]}
+                        </h3>
+                        <p className="text-muted-foreground text-center max-w-md">
+                            AI가 수많은 데이터를 분석하여 최고의 여행 코스를 만들고 있습니다. 잠시만 기다려주세요!
+                        </p>
+
+                        {/* Stepper Dots */}
+                        <div className="flex gap-2 mt-8">
+                            {LOADING_STEPS.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`h-2 rounded-full transition-all duration-500 ${idx === loadingStep ? 'w-8 bg-primary' : idx < loadingStep ? 'w-2 bg-primary/50' : 'w-2 bg-slate-200'}`}
+                                    style={idx <= loadingStep ? { backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' } : {}}
+                                />
                             ))}
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-
-            {/* Result Dashboard */}
-            {routeData && !isLoading && (
-                <div className="flex flex-col gap-8 w-full max-w-5xl animate-in slide-in-from-bottom-8 duration-700 px-4">
-
-                    {/* Map View */}
-                    <Card className="w-full h-[400px] md:h-[600px] shadow-xl border-0 overflow-hidden flex flex-col relative transition-shadow duration-500 hover:shadow-2xl">
-                        <div className="absolute top-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border pointer-events-none">
-                            <h3 className="font-bold flex items-center gap-2"><MapIcon size={18} style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} /> {routeData.uiTranslations?.mapTitle || "촬영지 지도"}</h3>
-                            <p className="text-sm text-muted-foreground">{routeData.spots.length} {routeData.uiTranslations?.spotCount || "개의 스팟"}</p>
                         </div>
-                        <div className="absolute top-4 right-4 z-10">
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                className="shadow-md bg-white hover:bg-slate-100 text-slate-700 font-semibold flex gap-2"
-                                onClick={handleShare}
-                            >
-                                <Share2 size={16} /> {routeData.uiTranslations?.shareButton || "코스 공유하기"}
-                            </Button>
-                        </div>
-                        <MapView spots={routeData.spots} languageCode={routeData.languageCode} />
-                    </Card>
+                    </div>
+                )}
 
-                    {/* Timeline View */}
-                    <Card className="w-full shadow-xl border-0 flex flex-col mb-8 transition-shadow duration-500 hover:shadow-2xl">
-                        <CardHeader className="border-b pb-6" style={{ backgroundColor: routeData?.themeColor ? `${routeData.themeColor}15` : 'hsl(var(--primary)/0.05)' }}>
-                            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                                <Clock style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} /> {routeData.uiTranslations?.timelineTitle || "추천 동선"}
-                            </CardTitle>
-                            <CardDescription className="text-base text-slate-600">
-                                <span className="font-semibold text-primary">{routeData.drama}</span> {routeData.uiTranslations?.timelineSubtitle || "당일치기 투어 스케줄"}
-                            </CardDescription>
-                        </CardHeader>
+                {/* Result Dashboard */}
+                {routeData && !isLoading && (
+                    <div className="flex flex-col gap-8 w-full max-w-5xl animate-in slide-in-from-bottom-8 duration-700 px-4">
 
-                        <CardContent className="flex-1 overflow-y-auto pt-6 px-6">
-                            <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                        {/* Map View */}
+                        <Card className="w-full h-[400px] md:h-[600px] shadow-xl border-0 overflow-hidden flex flex-col relative transition-shadow duration-500 hover:shadow-2xl">
+                            <div className="absolute top-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border pointer-events-none">
+                                <h3 className="font-bold flex items-center gap-2"><MapIcon size={18} style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} /> {routeData.uiTranslations?.mapTitle || "촬영지 지도"}</h3>
+                                <p className="text-sm text-muted-foreground">{routeData.spots.length} {routeData.uiTranslations?.spotCount || "개의 스팟"}</p>
+                            </div>
+                            <div className="absolute top-4 right-4 z-10">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="shadow-md bg-white hover:bg-slate-100 text-slate-700 font-semibold flex gap-2"
+                                    onClick={handleShare}
+                                >
+                                    <Share2 size={16} /> {routeData.uiTranslations?.shareButton || "코스 공유하기"}
+                                </Button>
+                            </div>
+                            <MapView spots={routeData.spots} languageCode={routeData.languageCode} />
+                        </Card>
 
-                                {routeData.itinerary.map((item, index) => {
-                                    const spotDetails = routeData.spots.find(s => item.spotName.includes(s.name.split(" ")[0]));
+                        {/* Timeline View */}
+                        <Card className="w-full shadow-xl border-0 flex flex-col mb-8 transition-shadow duration-500 hover:shadow-2xl">
+                            <CardHeader className="border-b pb-6" style={{ backgroundColor: routeData?.themeColor ? `${routeData.themeColor}15` : 'hsl(var(--primary)/0.05)' }}>
+                                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                                    <Clock style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }} /> {routeData.uiTranslations?.timelineTitle || "추천 동선"}
+                                </CardTitle>
+                                <CardDescription className="text-base text-slate-600">
+                                    <span className="font-semibold text-primary">{routeData.drama}</span> {routeData.uiTranslations?.timelineSubtitle || "당일치기 투어 스케줄"}
+                                </CardDescription>
+                            </CardHeader>
 
-                                    return (
-                                        <div key={index} className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                            {/* Timeline Icon */}
-                                            <div
-                                                className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-slate-200 group-[.is-active]:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 transition-colors duration-500"
-                                                style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
-                                            >
-                                                <span className="text-xs font-bold">{index + 1}</span>
-                                            </div>
+                            <CardContent className="flex-1 overflow-y-auto pt-6 px-6">
+                                <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
 
-                                            {/* Timeline Content */}
-                                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] pl-4 md:pl-0 md:group-odd:pr-6 md:group-even:pl-6 pb-2">
-                                                <div className="flex flex-col mb-1 group-[.is-active]:text-foreground">
-                                                    <time
-                                                        className="text-sm font-semibold mb-1"
-                                                        style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }}
-                                                    >
-                                                        {item.time}
-                                                    </time>
-                                                    <h4 className="font-bold text-lg leading-tight mb-2">{item.spotName}</h4>
-                                                    {spotDetails && (
-                                                        <div className="flex flex-col gap-3">
-                                                            <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-none bg-muted/50 p-3 rounded-lg border border-border/50">
-                                                                {spotDetails.description}
-                                                            </p>
-                                                            {spotDetails.imageUrl ? (
-                                                                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm relative group/img">
-                                                                    <img src={spotDetails.imageUrl} alt={item.spotName} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                                    {routeData.itinerary.map((item, index) => {
+                                        const spotDetails = routeData.spots.find(s => item.spotName.includes(s.name.split(" ")[0]));
+
+                                        return (
+                                            <div key={index} className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                                                {/* Timeline Icon */}
+                                                <div
+                                                    className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-slate-200 group-[.is-active]:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 transition-colors duration-500"
+                                                    style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
+                                                >
+                                                    <span className="text-xs font-bold">{index + 1}</span>
+                                                </div>
+
+                                                {/* Timeline Content */}
+                                                <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] pl-4 md:pl-0 md:group-odd:pr-6 md:group-even:pl-6 pb-2">
+                                                    <div className="flex flex-col mb-1 group-[.is-active]:text-foreground">
+                                                        <time
+                                                            className="text-sm font-semibold mb-1"
+                                                            style={{ color: routeData?.themeColor || 'hsl(var(--primary))' }}
+                                                        >
+                                                            {item.time}
+                                                        </time>
+                                                        <h4 className="font-bold text-lg leading-tight mb-2">{item.spotName}</h4>
+                                                        {spotDetails && (
+                                                            <div className="flex flex-col gap-3">
+                                                                <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-none bg-muted/50 p-3 rounded-lg border border-border/50">
+                                                                    {spotDetails.description}
+                                                                </p>
+                                                                {spotDetails.imageUrl ? (
+                                                                    <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm relative group/img">
+                                                                        <img src={spotDetails.imageUrl} alt={item.spotName} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm bg-slate-100 flex flex-col items-center justify-center text-muted-foreground/50 border border-slate-200">
+                                                                        <ImageIcon className="h-10 w-10 mb-2" />
+                                                                        <span className="text-xs">No image available</span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex justify-end mt-2">
+                                                                    <a
+                                                                        href={`https://map.kakao.com/link/to/${spotDetails.name.split(' (')[0]},${spotDetails.lat},${spotDetails.lng}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 rounded-md px-4 gap-2 text-white shadow"
+                                                                        style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
+                                                                    >
+                                                                        <ExternalLink size={14} />
+                                                                        {routeData.uiTranslations?.directionsButton || "길찾기"}
+                                                                    </a>
                                                                 </div>
-                                                            ) : (
-                                                                <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm bg-slate-100 flex flex-col items-center justify-center text-muted-foreground/50 border border-slate-200">
-                                                                    <ImageIcon className="h-10 w-10 mb-2" />
-                                                                    <span className="text-xs">No image available</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex justify-end mt-2">
-                                                                <a
-                                                                    href={`https://map.kakao.com/link/to/${spotDetails.name.split(' (')[0]},${spotDetails.lat},${spotDetails.lng}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 rounded-md px-4 gap-2 text-white shadow"
-                                                                    style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
-                                                                >
-                                                                    <ExternalLink size={14} />
-                                                                    {routeData.uiTranslations?.directionsButton || "길찾기"}
-                                                                </a>
                                                             </div>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
 
-                            </div>
-                        </CardContent>
-                    </Card>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                </div>
-            )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
