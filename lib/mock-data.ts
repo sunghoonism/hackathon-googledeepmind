@@ -14,6 +14,14 @@ export interface RouteResponse {
     drama: string;
     spots: Spot[];
     itinerary: ItineraryItem[];
+    uiTranslations: {
+        mapTitle: string;
+        spotCount: string;
+        timelineTitle: string;
+        timelineSubtitle: string;
+        successTitle: string;
+        successDescription: string;
+    }
 }
 
 export const MOCK_ROUTE_DATA: RouteResponse = {
@@ -42,5 +50,13 @@ export const MOCK_ROUTE_DATA: RouteResponse = {
         { time: "10:00", spotName: "퀸즈 그룹 본사 (여의도)" },
         { time: "12:30", spotName: "별장 (양평 숲속의 집) - 점심 및 산책" },
         { time: "15:00", spotName: "용두리 마을 (괴산군 문광면)" }
-    ]
+    ],
+    uiTranslations: {
+        mapTitle: "촬영지 지도",
+        spotCount: "개의 스팟",
+        timelineTitle: "추천 동선",
+        timelineSubtitle: "당일치기 투어 스케줄",
+        successTitle: "동선 생성 완료!",
+        successDescription: "주요 촬영지 동선입니다."
+    }
 };

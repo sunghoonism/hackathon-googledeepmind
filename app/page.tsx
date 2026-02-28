@@ -42,8 +42,8 @@ export default function Home() {
             setRouteData(data);
 
             toast({
-                title: "동선 생성 완료!",
-                description: `'${data.drama || query}'의 주요 촬영지 동선입니다.`,
+                title: data.uiTranslations?.successTitle || "동선 생성 완료!",
+                description: data.uiTranslations?.successDescription || `'${data.drama || query}'의 주요 촬영지 동선입니다.`,
             });
         } catch (error) {
             console.error(error);
@@ -127,8 +127,8 @@ export default function Home() {
                     {/* Map View */}
                     <Card className="md:col-span-3 h-[500px] md:h-[700px] shadow-xl border-0 overflow-hidden flex flex-col relative">
                         <div className="absolute top-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border pointer-events-none">
-                            <h3 className="font-bold flex items-center gap-2"><MapIcon size={18} className="text-primary" /> 촬영지 지도</h3>
-                            <p className="text-sm text-muted-foreground">{routeData.spots.length}개의 스팟</p>
+                            <h3 className="font-bold flex items-center gap-2"><MapIcon size={18} className="text-primary" /> {routeData.uiTranslations?.mapTitle || "촬영지 지도"}</h3>
+                            <p className="text-sm text-muted-foreground">{routeData.spots.length} {routeData.uiTranslations?.spotCount || "개의 스팟"}</p>
                         </div>
                         <MapView spots={routeData.spots} />
                     </Card>
@@ -137,10 +137,10 @@ export default function Home() {
                     <Card className="md:col-span-2 shadow-xl border-0 flex flex-col h-[500px] md:h-[700px]">
                         <CardHeader className="bg-primary/5 border-b pb-6">
                             <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                                <Clock className="text-primary" /> 추천 동선
+                                <Clock className="text-primary" /> {routeData.uiTranslations?.timelineTitle || "추천 동선"}
                             </CardTitle>
                             <CardDescription className="text-base text-slate-600">
-                                <span className="font-semibold text-primary">{routeData.drama}</span> 당일치기 투어 스케줄
+                                <span className="font-semibold text-primary">{routeData.drama}</span> {routeData.uiTranslations?.timelineSubtitle || "당일치기 투어 스케줄"}
                             </CardDescription>
                         </CardHeader>
 

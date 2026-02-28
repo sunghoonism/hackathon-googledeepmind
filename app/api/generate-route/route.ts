@@ -35,9 +35,22 @@ const responseSchema = {
                 required: ["time", "spotName"]
             },
             description: "당일치기 여행 동선 타임라인 (시간대별 방문 장소)"
+        },
+        uiTranslations: {
+            type: "object",
+            properties: {
+                mapTitle: { type: "string", description: "번역된 텍스트: '촬영지 지도'" },
+                spotCount: { type: "string", description: "번역된 텍스트: '개의 스팟'" },
+                timelineTitle: { type: "string", description: "번역된 텍스트: '추천 동선'" },
+                timelineSubtitle: { type: "string", description: "번역된 텍스트: '당일치기 투어 스케줄'" },
+                successTitle: { type: "string", description: "번역된 텍스트: '동선 생성 완료!'" },
+                successDescription: { type: "string", description: "번역된 텍스트: '주요 촬영지 동선입니다.'" }
+            },
+            required: ["mapTitle", "spotCount", "timelineTitle", "timelineSubtitle", "successTitle", "successDescription"],
+            description: "UI 화면에 표시될 텍스트들의 다국어 번역본 데이터"
         }
     },
-    required: ["drama", "spots", "itinerary"]
+    required: ["drama", "spots", "itinerary", "uiTranslations"]
 };
 
 export async function POST(req: NextRequest) {
@@ -62,6 +75,10 @@ export async function POST(req: NextRequest) {
 검색 성능과 안전성을 위해 존재하는 실제 장소들의 대략적인 위도(lat)와 경도(lng)를 반드시 포함해야 합니다.
 
 드라마 제목: "${query}"
+
+[중요 지시사항 - 다국어 자동 지원]
+사용자가 입력한 "드라마 제목"의 언어(한국어, 영어, 일본어, 중국어, 프랑스어, 베트남어, 태국어, 스페인어, 아랍어 등 **모든 언어**)를 자동으로 감지하세요.
+그리고 응답하는 JSON 데이터 내의 **모든 텍스트**(장소명, 장소별 설명, 시간, 그리고 \`uiTranslations\` 객체 내의 모든 UI 텍스트 값들)를 **반드시 감지된 해당 언어로 번역해서** 작성해야 합니다.
 
 제공된 JSON Schema 형식에 맞추어 완벽한 JSON 형식으로만 응답하세요. 다른 부가적인 텍스트는 출력하지 마세요.`;
 
