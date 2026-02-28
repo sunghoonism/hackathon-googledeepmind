@@ -12,12 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MapView from "@/components/map-view";
 
 const RECOMMENDED_DRAMAS = [
-    { title: "눈물의 여왕", desc: "Queen of Tears", image: "https://images.unsplash.com/photo-1549492423-400259a2e574?q=80&w=200&h=300&fit=crop" },
-    { title: "도깨비", desc: "Goblin", image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=200&h=300&fit=crop" },
-    { title: "사랑의 불시착", desc: "Crash Landing on You", image: "https://images.unsplash.com/photo-1620986701140-5bfa17c093bf?q=80&w=200&h=300&fit=crop" },
-    { title: "이태원 클라쓰", desc: "Itaewon Class", image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=200&h=300&fit=crop" },
-    { title: "빈센조", desc: "Vincenzo", image: "https://images.unsplash.com/photo-1513622470522-26c31154c1ff?q=80&w=200&h=300&fit=crop" },
-    { title: "선재 업고 튀어", desc: "Lovely Runner", image: "https://images.unsplash.com/photo-1520696954207-6baafe0cdae1?q=80&w=200&h=300&fit=crop" },
+    { title: "눈물의 여왕", desc: "Queen of Tears", image: "https://upload.wikimedia.org/wikipedia/en/thumb/e/e2/Queen_of_Tears_poster.png/250px-Queen_of_Tears_poster.png" },
+    { title: "도깨비", desc: "Goblin", image: "https://upload.wikimedia.org/wikipedia/en/thumb/6/68/Goblin_Poster.jpg/250px-Goblin_Poster.jpg" },
+    { title: "사랑의 불시착", desc: "Crash Landing on You", image: "https://upload.wikimedia.org/wikipedia/en/6/64/Crash_Landing_on_You_main_poster.jpg" },
+    { title: "이태원 클라쓰", desc: "Itaewon Class", image: "https://upload.wikimedia.org/wikipedia/en/thumb/9/99/Itaewon_Class.jpg/250px-Itaewon_Class.jpg" },
+    { title: "빈센조", desc: "Vincenzo", image: "https://upload.wikimedia.org/wikipedia/en/thumb/5/5b/Vincenzo_TV_series.jpg/250px-Vincenzo_TV_series.jpg" },
+    { title: "선재 업고 튀어", desc: "Lovely Runner", image: "https://upload.wikimedia.org/wikipedia/en/thumb/6/67/Lovely_Runner.png/250px-Lovely_Runner.png" },
 ];
 
 export default function Home() {
@@ -121,6 +121,9 @@ export default function Home() {
                     >
                         K-Pilgrimage Assistant
                     </h1>
+                    <p className="text-lg md:text-xl text-muted-foreground font-medium">
+                        K-드라마 성지순례 도우미
+                    </p>
                 </div>
 
                 {/* Recommended Dramas Marquee Slider */}
@@ -138,7 +141,6 @@ export default function Home() {
                                 <img src={drama.image} alt={drama.title} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
                                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                                    <p className="text-white font-bold text-sm md:text-base leading-tight drop-shadow-md">{drama.title}</p>
                                     <p className="text-white/80 text-xs truncate drop-shadow-md">{drama.desc}</p>
                                 </div>
                             </div>
@@ -216,10 +218,10 @@ export default function Home() {
                                 className="shadow-md bg-white hover:bg-slate-100 text-slate-700 font-semibold flex gap-2"
                                 onClick={handleShare}
                             >
-                                <Share2 size={16} /> 코스 공유하기
+                                <Share2 size={16} /> {routeData.uiTranslations?.shareButton || "코스 공유하기"}
                             </Button>
                         </div>
-                        <MapView spots={routeData.spots} />
+                        <MapView spots={routeData.spots} languageCode={routeData.languageCode} />
                     </Card>
 
                     {/* Timeline View */}
@@ -283,7 +285,7 @@ export default function Home() {
                                                                     style={{ backgroundColor: routeData?.themeColor || 'hsl(var(--primary))' }}
                                                                 >
                                                                     <ExternalLink size={14} />
-                                                                    길찾기
+                                                                    {routeData.uiTranslations?.directionsButton || "길찾기"}
                                                                 </a>
                                                             </div>
                                                         </div>

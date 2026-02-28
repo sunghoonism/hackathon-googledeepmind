@@ -23,13 +23,17 @@ export interface RouteResponse {
         timelineSubtitle: string;
         successTitle: string;
         successDescription: string;
+        shareButton?: string;
+        directionsButton?: string;
     };
     themeColor?: string;
+    languageCode?: string;
 }
 
 export const MOCK_ROUTE_DATA: RouteResponse = {
     drama: "눈물의 여왕",
     themeColor: "#db2777", // pink-600
+    languageCode: "ko",
     spots: [
         {
             name: "용두리 마을 (가상의 마을 - 실제 촬영지: 괴산군 문광면)",
@@ -64,6 +68,8 @@ export const MOCK_ROUTE_DATA: RouteResponse = {
         timelineTitle: "추천 동선",
         timelineSubtitle: "당일치기 투어 스케줄",
         successTitle: "동선 생성 완료!",
-        successDescription: "주요 촬영지 동선입니다."
+        successDescription: "주요 촬영지 동선입니다.",
+        shareButton: "코스 공유하기",
+        directionsButton: "길찾기"
     }
 };

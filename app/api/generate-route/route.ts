@@ -45,17 +45,23 @@ const responseSchema = {
                 timelineTitle: { type: "string", description: "번역된 텍스트: '추천 동선'" },
                 timelineSubtitle: { type: "string", description: "번역된 텍스트: '당일치기 투어 스케줄'" },
                 successTitle: { type: "string", description: "번역된 텍스트: '동선 생성 완료!'" },
-                successDescription: { type: "string", description: "번역된 텍스트: '주요 촬영지 동선입니다.'" }
+                successDescription: { type: "string", description: "번역된 텍스트: '주요 촬영지 동선입니다.'" },
+                shareButton: { type: "string", description: "번역된 텍스트: '코스 공유하기'" },
+                directionsButton: { type: "string", description: "번역된 텍스트: '길찾기'" }
             },
-            required: ["mapTitle", "spotCount", "timelineTitle", "timelineSubtitle", "successTitle", "successDescription"],
+            required: ["mapTitle", "spotCount", "timelineTitle", "timelineSubtitle", "successTitle", "successDescription", "shareButton", "directionsButton"],
             description: "UI 화면에 표시될 텍스트들의 다국어 번역본 데이터"
         },
         themeColor: {
             type: "string",
             description: "드라마의 전반적인 분위기와 어울리는 메인 포인트 컬러 (Hex 코드, 예: '#db2777')"
+        },
+        languageCode: {
+            type: "string",
+            description: "감지된 언어의 2자리 언어 코드 (예: 한국어='ko', 영어='en', 일본어='ja', 중국어='zh' 등). 값이 없거나 모호하면 'ko'를 반환하세요."
         }
     },
-    required: ["drama", "spots", "itinerary", "uiTranslations", "themeColor"]
+    required: ["drama", "spots", "itinerary", "uiTranslations", "themeColor", "languageCode"]
 };
 
 export async function POST(req: NextRequest) {
@@ -82,8 +88,9 @@ export async function POST(req: NextRequest) {
 드라마 제목: "${query}"
 
 [중요 지시사항 - 다국어 자동 지원]
-사용자가 입력한 "드라마 제목"의 언어(한국어, 영어, 일본어, 중국어, 프랑스어, 베트남어, 태국어, 스페인어, 아랍어 등 **모든 언어**)를 자동으로 감지하세요.
-그리고 응답하는 JSON 데이터 내의 **모든 텍스트**(장소명, 장소별 설명, 시간, 그리고 \`uiTranslations\` 객체 내의 모든 UI 텍스트 값들)를 **반드시 감지된 해당 언어로 번역해서** 작성해야 합니다.
+사용자가 입력한 "드라마 제목"의 언어(한국어, 영어, 일본어, 중국어 등 모든 언어)를 자동으로 감지하세요. **특히 영어로 입력한 경우 반드시 영어로 응답해야 합니다!**
+응답하는 JSON 데이터 내의 **모든 텍스트**(장소명, 장소별 설명, 시간, 그리고 \`uiTranslations\` 객체 내의 모든 UI 텍스트 값들)를 **반드시 감지된 해당 언어로 번역해서** 작성해야 합니다.
+예를 들어 사용자가 "Queen of Tears"라고 입력하면, \`uiTranslations\`의 \`shareButton\`은 "Share Route"같이 영어로, \`directionsButton\`은 "Directions"같이 완벽히 영어로 모두 작성되어야 합니다.
 
 제공된 JSON Schema 형식에 맞추어 완벽한 JSON 형식으로만 응답하세요. 다른 부가적인 텍스트는 출력하지 마세요.`;
 

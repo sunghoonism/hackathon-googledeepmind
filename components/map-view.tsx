@@ -8,6 +8,7 @@ import type { Spot } from "@/lib/mock-data";
 
 interface MapViewProps {
     spots: Spot[];
+    languageCode?: string;
 }
 
 const mapContainerStyle = {
@@ -15,9 +16,10 @@ const mapContainerStyle = {
     height: "100%",
 };
 
-export default function MapView({ spots }: MapViewProps) {
+export default function MapView({ spots, languageCode }: MapViewProps) {
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+        language: languageCode || "ko",
     });
 
     const center = useMemo(() => {
