@@ -10,18 +10,30 @@ import { MOCK_ROUTE_DATA, type RouteResponse } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import MapView from "@/components/map-view";
 
+const RECOMMENDED_DRAMAS = [
+    { title: "눈물의 여왕", desc: "Queen of Tears", image: "https://images.unsplash.com/photo-1549492423-400259a2e574?q=80&w=200&h=300&fit=crop" },
+    { title: "도깨비", desc: "Goblin", image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=200&h=300&fit=crop" },
+    { title: "사랑의 불시착", desc: "Crash Landing on You", image: "https://images.unsplash.com/photo-1620986701140-5bfa17c093bf?q=80&w=200&h=300&fit=crop" },
+    { title: "이태원 클라쓰", desc: "Itaewon Class", image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=200&h=300&fit=crop" },
+    { title: "빈센조", desc: "Vincenzo", image: "https://images.unsplash.com/photo-1513622470522-26c31154c1ff?q=80&w=200&h=300&fit=crop" },
+    { title: "선재 업고 튀어", desc: "Lovely Runner", image: "https://images.unsplash.com/photo-1520696954207-6baafe0cdae1?q=80&w=200&h=300&fit=crop" },
+];
+
 export default function Home() {
     const [query, setQuery] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [routeData, setRouteData] = useState<RouteResponse | null>(null);
     const { toast } = useToast();
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!query.trim()) {
+    const handleSearch = async (e?: React.FormEvent, directQuery?: string) => {
+        if (e) e.preventDefault();
+
+        const searchQuery = directQuery || query;
+
+        if (!searchQuery.trim()) {
             toast({
-                title: "드라마 제목을 입력해주세요",
-                description: "예: 눈물의 여왕, 도깨비 등",
+                title: "Insert Title of Drama",
+                description: "Example: Queen of Tears, Goblin",
                 variant: "destructive",
             });
             return;
@@ -34,7 +46,7 @@ export default function Home() {
             const res = await fetch("/api/generate-route", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query })
+                body: JSON.stringify({ query: searchQuery })
             });
             const data = await res.json();
 
@@ -43,7 +55,7 @@ export default function Home() {
 
             toast({
                 title: data.uiTranslations?.successTitle || "동선 생성 완료!",
-                description: data.uiTranslations?.successDescription || `'${data.drama || query}'의 주요 촬영지 동선입니다.`,
+                description: data.uiTranslations?.successDescription || `'${data.drama || searchQuery}'의 주요 촬영지 동선입니다.`,
             });
         } catch (error) {
             console.error(error);
@@ -66,25 +78,43 @@ export default function Home() {
                     <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
                         K-Pilgrimage Assistant
                     </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-[600px] mx-auto">
-                        당신의 최애 K-드라마 성지순례를 완벽하게.
-                        <br className="hidden md:block" />
-                        AI가 추천하는 1일 당일치기 동선을 확인해보세요.
-                    </p>
+                </div>
+
+                {/* Recommended Dramas Marquee Slider */}
+                <div className="w-full max-w-5xl overflow-hidden py-4 -mx-4 md:mx-0 relative [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+                    <div className="flex w-max gap-4 animate-marquee hover:[animation-play-state:paused] px-4">
+                        {[...RECOMMENDED_DRAMAS, ...RECOMMENDED_DRAMAS].map((drama, idx) => (
+                            <div
+                                key={idx}
+                                className="group relative w-32 h-44 md:w-40 md:h-56 rounded-xl overflow-hidden shrink-0 cursor-pointer transition-transform hover:scale-105"
+                                onClick={() => {
+                                    setQuery(drama.title);
+                                    handleSearch(undefined, drama.title);
+                                }}
+                            >
+                                <img src={drama.image} alt={drama.title} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
+                                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                                    <p className="text-white font-bold text-sm md:text-base leading-tight drop-shadow-md">{drama.title}</p>
+                                    <p className="text-white/80 text-xs truncate drop-shadow-md">{drama.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 <form onSubmit={handleSearch} className="flex flex-col sm:flex-row w-full max-w-2xl gap-3 px-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
-                            placeholder="드라마 제목을 입력하세요 (예: 눈물의 여왕)"
+                            placeholder="Insert Title of Drama"
                             className="pl-10 h-14 text-lg rounded-xl shadow-sm border-2 focus-visible:ring-primary/20"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                         />
                     </div>
                     <Button type="submit" size="lg" className="h-14 px-8 rounded-xl font-bold text-lg w-full sm:w-auto shadow-md" disabled={isLoading}>
-                        {isLoading ? "탐색 중..." : "동선 생성하기"}
+                        {isLoading ? "Searching..." : "Generate Route"}
                     </Button>
                 </form>
             </section>
