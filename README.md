@@ -5,6 +5,10 @@
 
 <br/>
 
+## 완성된 서비스 데모 링크
+
+[K-Pilgrimage Assistant](http://34.64.168.86:3000)
+
 ## 📌 1. 프로젝트 개요 (Overview)
 
 **K-Pilgrimage Assistant**는 K-드라마 팬들을 위해 좋아하는 드라마 제목만 입력하면, **Gemini AI가 추천하는 주요 촬영지 및 1일 당일치기 투어 동선(Itinerary)을 자동으로 생성**해주는 지능형 큐레이션 서비스입니다.
